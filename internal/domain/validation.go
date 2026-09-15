@@ -1,4 +1,4 @@
-package application
+package domain
 
 import (
 	"fmt"
@@ -6,11 +6,11 @@ import (
 	"strings"
 )
 
-var appID = regexp.MustCompile(`^[a-z0-9][a-z0-9-]*$`)
-var envKey = regexp.MustCompile(`^[A-Z_][A-Z0-9_]*$`)
+var ApplicationID = regexp.MustCompile(`^[a-z0-9][a-z0-9-]*$`)
+var environmentKey = regexp.MustCompile(`^[A-Z_][A-Z0-9_]*$`)
 
-func validateManifestMetadata(manifest Manifest) error {
-	if !appID.MatchString(manifest.ID) {
+func ValidateMetadata(manifest Manifest) error {
+	if !ApplicationID.MatchString(manifest.ID) {
 		return fmt.Errorf("application id %q must use lowercase letters, numbers, and hyphens", manifest.ID)
 	}
 	if strings.TrimSpace(manifest.Name) == "" {
@@ -27,18 +27,18 @@ func validateManifestMetadata(manifest Manifest) error {
 			return fmt.Errorf("application.json: invalid scope %q", scope)
 		}
 	}
-	for _, environmentVariable := range manifest.Env {
-		if !envKey.MatchString(environmentVariable.Key) {
-			return fmt.Errorf("application.json: invalid env key %q", environmentVariable.Key)
+	for _, variable := range manifest.Env {
+		if !environmentKey.MatchString(variable.Key) {
+			return fmt.Errorf("application.json: invalid env key %q", variable.Key)
 		}
-		if environmentVariable.Generate != "" && environmentVariable.Generate != "password" {
-			return fmt.Errorf("application.json: unsupported generator %q", environmentVariable.Generate)
+		if variable.Generate != "" && variable.Generate != "password" {
+			return fmt.Errorf("application.json: unsupported generator %q", variable.Generate)
 		}
 	}
 	return nil
 }
 
-func validateManifestRuntime(manifest Manifest) error {
+func ValidateRuntime(manifest Manifest) error {
 	if manifest.Port.Internal < 0 || manifest.Port.Internal > 65535 || manifest.Port.DefaultExternal < 0 || manifest.Port.DefaultExternal > 65535 {
 		return fmt.Errorf("application.json: ports must be between 1 and 65535")
 	}

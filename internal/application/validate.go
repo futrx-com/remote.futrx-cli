@@ -6,6 +6,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/futrx-com/remote.futrx-cli/internal/domain"
 )
 
 func Validate(dir string) (Manifest, error) {
@@ -17,14 +19,14 @@ func Validate(dir string) (Manifest, error) {
 	if err != nil {
 		return manifest, err
 	}
-	if err := validateManifestMetadata(manifest); err != nil {
+	if err := domain.ValidateMetadata(manifest); err != nil {
 		return manifest, err
 	}
 	install, err := resolveInstall(dir, manifest)
 	if err != nil {
 		return manifest, err
 	}
-	if err := validateManifestRuntime(manifest); err != nil {
+	if err := domain.ValidateRuntime(manifest); err != nil {
 		return manifest, err
 	}
 	if !hasCapability(dir, install) {

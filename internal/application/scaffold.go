@@ -5,11 +5,13 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/futrx-com/remote.futrx-cli/internal/domain"
 )
 
 func Scaffold(parent, name string) (string, error) {
 	id := slug(name)
-	if !appID.MatchString(id) {
+	if !domain.ApplicationID.MatchString(id) {
 		return "", fmt.Errorf("%q does not produce a valid application id", name)
 	}
 	dir := filepath.Join(parent, id)

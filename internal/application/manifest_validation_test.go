@@ -5,6 +5,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/futrx-com/remote.futrx-cli/internal/domain"
 )
 
 func validManifest() Manifest {
@@ -29,13 +31,13 @@ func TestValidateManifestMetadata(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			manifest := validManifest()
 			tt.edit(&manifest)
-			err := validateManifestMetadata(manifest)
+			err := domain.ValidateMetadata(manifest)
 			if err == nil || !strings.Contains(err.Error(), tt.want) {
 				t.Fatalf("error = %v, want substring %q", err, tt.want)
 			}
 		})
 	}
-	if err := validateManifestMetadata(validManifest()); err != nil {
+	if err := domain.ValidateMetadata(validManifest()); err != nil {
 		t.Fatalf("valid manifest: %v", err)
 	}
 }
@@ -58,7 +60,7 @@ func TestValidateManifestRuntime(t *testing.T) {
 			manifest := validManifest()
 			manifest.Port = tt.port
 			manifest.Healthcheck.Command = tt.health
-			err := validateManifestRuntime(manifest)
+			err := domain.ValidateRuntime(manifest)
 			if err == nil || !strings.Contains(err.Error(), tt.want) {
 				t.Fatalf("error = %v, want substring %q", err, tt.want)
 			}
