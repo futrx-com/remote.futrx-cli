@@ -7,6 +7,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/futrx-com/remote.futrx-cli/internal/bundle"
 )
 
 type BuildResult struct {
@@ -36,23 +38,22 @@ func Build(dir, output string) (BuildResult, error) {
 	if strings.HasPrefix(output+string(os.PathSeparator), dir+string(os.PathSeparator)) {
 		return BuildResult{}, fmt.Errorf("output must be outside the application directory")
 	}
-	files, err := collectSourceFiles(dir)
+	files, err := bundle.Collect(dir)
 	if err != nil {
 		return BuildResult{}, err
 	}
-	payload, hasInfra, err := infraPayload(files)
+	payload, hasInfra, err := bundle.InfraPayload(files)
 	if err != nil {
 		return BuildResult{}, err
 	}
 	if hasInfra {
-		files = withoutSourceFile(files, "infra/payload.tar.gz")
-		files = append(files, sourceFile{name: "infra/payload.tar.gz", data: payload})
+		files = bundle.Replace(files, "infra/payload.tar.gz", payload)
 	}
-	archive, err := buildApplicationArchive(files)
+	archive, err := bundle.Archive(files)
 	if err != nil {
 		return BuildResult{}, err
 	}
-	if err := writeBuildArtifact(output, archive); err != nil {
+	if err := bundle.Write(output, archive); err != nil {
 		return BuildResult{}, err
 	}
 	sum := sha256.Sum256(archive)
