@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/futrx-com/remote.futrx-cli/internal/domain"
+	"github.com/futrx-com/remote.futrx-cli/internal/project"
 )
 
 func validManifest() Manifest {
@@ -74,8 +75,8 @@ func TestReadManifestRejectsMalformedAndUnknownFields(t *testing.T) {
 		if err := os.WriteFile(filepath.Join(dir, "application.json"), []byte(raw), 0644); err != nil {
 			t.Fatal(err)
 		}
-		if _, err := readManifest(dir); err == nil || !strings.Contains(err.Error(), "parse application.json") {
-			t.Fatalf("readManifest(%q) error = %v", raw, err)
+		if _, err := project.ReadManifest(dir); err == nil || !strings.Contains(err.Error(), "parse application.json") {
+			t.Fatalf("ReadManifest(%q) error = %v", raw, err)
 		}
 	}
 }

@@ -1,13 +1,11 @@
 package application
 
 import (
-	"encoding/json"
 	"fmt"
-	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/futrx-com/remote.futrx-cli/internal/domain"
+	"github.com/futrx-com/remote.futrx-cli/internal/project"
 )
 
 func Validate(dir string) (Manifest, error) {
@@ -15,39 +13,25 @@ func Validate(dir string) (Manifest, error) {
 	if err != nil {
 		return Manifest{}, err
 	}
-	manifest, err := readManifest(dir)
+	manifest, err := project.ReadManifest(dir)
 	if err != nil {
 		return manifest, err
 	}
 	if err := domain.ValidateMetadata(manifest); err != nil {
 		return manifest, err
 	}
-	install, err := resolveInstall(dir, manifest)
+	install, err := project.ResolveInstall(dir, manifest)
 	if err != nil {
 		return manifest, err
 	}
 	if err := domain.ValidateRuntime(manifest); err != nil {
 		return manifest, err
 	}
-	if !hasCapability(dir, install) {
+	if !project.HasCapability(dir, install) {
 		return manifest, fmt.Errorf("application has no infra, UI, backend, or skills capability")
 	}
-	if err := validateApplicationTree(dir); err != nil {
+	if err := project.ValidateTree(dir); err != nil {
 		return manifest, err
-	}
-	return manifest, nil
-}
-
-func readManifest(dir string) (Manifest, error) {
-	raw, err := os.ReadFile(filepath.Join(dir, "application.json"))
-	if err != nil {
-		return Manifest{}, fmt.Errorf("read application.json: %w", err)
-	}
-	var manifest Manifest
-	dec := json.NewDecoder(strings.NewReader(string(raw)))
-	dec.DisallowUnknownFields()
-	if err := dec.Decode(&manifest); err != nil {
-		return manifest, fmt.Errorf("parse application.json: %w", err)
 	}
 	return manifest, nil
 }
