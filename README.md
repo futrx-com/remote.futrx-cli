@@ -19,6 +19,21 @@ curl -fsSL https://raw.githubusercontent.com/futrx-com/remote.futrx-cli/main/ins
   | REMOTE_VERSION=v0.1.0 REMOTE_INSTALL_DIR="$HOME/bin" sh
 ```
 
+On Windows, run this in PowerShell:
+
+```powershell
+irm https://raw.githubusercontent.com/futrx-com/remote.futrx-cli/main/install.ps1 | iex
+```
+
+The Windows installer supports AMD64 and ARM64, verifies the release checksum,
+installs `remote.exe` under `%LOCALAPPDATA%\Programs\Remote` by default, and
+adds that directory to the user `PATH`. `REMOTE_VERSION` and
+`REMOTE_INSTALL_DIR` provide the same overrides as on Linux and macOS.
+
+Platform detection, download, and checksum verification happen once when the
+installer runs. The installed CLI does not contact GitHub or repeat installation
+checks when you run a command.
+
 ## Install from source
 
 ```sh

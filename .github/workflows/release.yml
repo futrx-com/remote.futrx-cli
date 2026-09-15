@@ -22,16 +22,32 @@ jobs:
           go test ./...
           go vet ./...
           sh -n install.sh
+      - name: Validate Windows installer
+        shell: pwsh
+        run: |
+          $tokens = $null
+          $errors = $null
+          [System.Management.Automation.Language.Parser]::ParseFile(
+            (Resolve-Path "./install.ps1"),
+            [ref]$tokens,
+            [ref]$errors
+          ) > $null
+          if ($errors.Count) {
+            $errors | ForEach-Object { Write-Error $_ }
+            exit 1
+          }
       - name: Build release binaries
         run: |
           mkdir -p dist
-          for target in linux/amd64 linux/arm64 darwin/amd64 darwin/arm64; do
+          for target in linux/amd64 linux/arm64 darwin/amd64 darwin/arm64 windows/amd64 windows/arm64; do
             os=${target%/*}
             arch=${target#*/}
+            extension=
+            if [ "$os" = windows ]; then extension=.exe; fi
             CGO_ENABLED=0 GOOS=$os GOARCH=$arch go build \
               -trimpath \
               -ldflags "-s -w -X main.version=${GITHUB_REF_NAME}" \
-              -o "dist/remote-${os}-${arch}" \
+              -o "dist/remote-${os}-${arch}${extension}" \
               ./cmd/remote
           done
           cd dist
