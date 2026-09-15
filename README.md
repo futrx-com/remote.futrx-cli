@@ -2,6 +2,9 @@
 
 The developer CLI for creating and packaging Remote applications.
 
+See [ARCHITECTURE.md](ARCHITECTURE.md) for package boundaries and
+[CONTRIBUTING.md](CONTRIBUTING.md) for local checks and testing expectations.
+
 ## Install
 
 Install the latest release on Linux or macOS:
