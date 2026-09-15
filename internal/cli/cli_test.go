@@ -22,6 +22,46 @@ func TestCreateSyntaxes(t *testing.T) {
 	}
 }
 
+func TestInformationalCommands(t *testing.T) {
+	for _, tt := range []struct {
+		name string
+		args []string
+		want string
+	}{
+		{name: "no arguments", args: nil, want: usage + "\n"},
+		{name: "help command", args: []string{"help"}, want: usage + "\n"},
+		{name: "long help flag", args: []string{"--help"}, want: usage + "\n"},
+		{name: "short help flag", args: []string{"-h"}, want: usage + "\n"},
+		{name: "version command", args: []string{"version"}, want: "test-version\n"},
+		{name: "version flag", args: []string{"--version"}, want: "test-version\n"},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			var stdout, stderr bytes.Buffer
+			if err := Run(tt.args, &stdout, &stderr, "test-version"); err != nil {
+				t.Fatalf("Run(%v): %v", tt.args, err)
+			}
+			if stdout.String() != tt.want {
+				t.Fatalf("stdout = %q, want %q", stdout.String(), tt.want)
+			}
+			if stderr.Len() != 0 {
+				t.Fatalf("stderr = %q, want empty", stderr.String())
+			}
+		})
+	}
+}
+
+func TestUnknownCommand(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	err := Run([]string{"unknown"}, &stdout, &stderr, "test")
+	want := "unknown command \"unknown\"\n\n" + usage
+	if err == nil || err.Error() != want {
+		t.Fatalf("error = %v, want %q", err, want)
+	}
+	if stdout.Len() != 0 || stderr.Len() != 0 {
+		t.Fatalf("stdout = %q, stderr = %q; want both empty", stdout.String(), stderr.String())
+	}
+}
+
 func TestBuildDefaultsToCurrentDirectory(t *testing.T) {
 	parent := t.TempDir()
 	dir, err := application.Scaffold(parent, "sample")
