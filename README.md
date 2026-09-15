@@ -2,6 +2,23 @@
 
 The developer CLI for creating and packaging Remote applications.
 
+## Install
+
+Install the latest release on Linux or macOS:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/futrx-com/remote.futrx-cli/main/install.sh | sh
+```
+
+The installer supports AMD64 and ARM64, verifies the release checksum, and
+places `remote` in `~/.local/bin` by default. Install a specific release or
+choose another directory with environment variables on the `sh` command:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/futrx-com/remote.futrx-cli/main/install.sh \
+  | REMOTE_VERSION=v0.1.0 REMOTE_INSTALL_DIR="$HOME/bin" sh
+```
+
 ## Install from source
 
 ```sh
