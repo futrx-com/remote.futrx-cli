@@ -1,3 +1,3 @@
-module github.com/futrx-com/remote-cli
+module github.com/futrx-com/remote.futrx-cli
 
 go 1.22

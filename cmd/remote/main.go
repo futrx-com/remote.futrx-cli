@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/futrx-com/remote-cli/internal/cli"
+	"github.com/futrx-com/remote.futrx-cli/internal/cli"
 )
 
 var version = "dev"

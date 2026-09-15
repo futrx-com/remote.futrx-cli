@@ -5,7 +5,7 @@ The developer CLI for creating and packaging Remote applications.
 ## Install from source
 
 ```sh
-go install github.com/futrx-com/remote-cli/cmd/remote@latest
+go install github.com/futrx-com/remote.futrx-cli/cmd/remote@latest
 ```
 
 During local development:

@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/futrx-com/remote-cli/internal/application"
+	"github.com/futrx-com/remote.futrx-cli/internal/application"
 )
 
 func runValidate(args []string, stdout, stderr io.Writer) error {
