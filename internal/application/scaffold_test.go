@@ -3,6 +3,7 @@ package application
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 )
 
@@ -23,6 +24,11 @@ func TestScaffoldCreatesExpectedFilesAndModes(t *testing.T) {
 		info, err := os.Stat(filepath.Join(dir, filepath.FromSlash(name)))
 		if err != nil {
 			t.Errorf("%s: %v", name, err)
+			continue
+		}
+		// Windows does not implement Unix permission bits. os.WriteFile applies
+		// the requested mode on Unix, but reports files as 0666 on Windows.
+		if runtime.GOOS == "windows" {
 			continue
 		}
 		want := os.FileMode(0644)
