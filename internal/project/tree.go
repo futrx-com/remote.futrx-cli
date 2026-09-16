@@ -37,7 +37,7 @@ func ValidateTree(dir string) error {
 		}
 		if entry.Type()&os.ModeSymlink != 0 {
 			relative, _ := filepath.Rel(dir, path)
-			return fmt.Errorf("symlinks are not supported: %s", relative)
+			return fmt.Errorf("symlinks are not supported: %s", filepath.ToSlash(relative))
 		}
 		return nil
 	})
