@@ -11,9 +11,11 @@ make coverage
 go vet ./...
 ```
 
-CI runs tests and vet on Linux, macOS, and Windows, validates both installers,
-runs the race detector, cross-compiles every supported OS/architecture pair,
-and rejects total statement coverage below 80%.
+CI runs tests on Linux, macOS, and Windows. Independent jobs run formatting,
+vet, the race detector, coverage, cross-compilation, and real installer smoke
+tests in parallel. The installer jobs download checksummed fixture releases,
+install them, and execute the resulting Linux or Windows binary. CI rejects
+total statement coverage below 80%.
 
 ## Testing changes
 
