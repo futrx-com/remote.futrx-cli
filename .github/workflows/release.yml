@@ -9,7 +9,7 @@ permissions:
   contents: write
 
 jobs:
-  release:
+  build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -22,20 +22,6 @@ jobs:
           go test ./...
           go vet ./...
           sh -n install.sh
-      - name: Validate Windows installer
-        shell: pwsh
-        run: |
-          $tokens = $null
-          $errors = $null
-          [System.Management.Automation.Language.Parser]::ParseFile(
-            (Resolve-Path "./install.ps1"),
-            [ref]$tokens,
-            [ref]$errors
-          ) > $null
-          if ($errors.Count) {
-            $errors | ForEach-Object { Write-Error $_ }
-            exit 1
-          }
       - name: Build release binaries
         run: |
           mkdir -p dist
@@ -52,6 +38,106 @@ jobs:
           done
           cd dist
           sha256sum remote-* > checksums.txt
+      - name: Store release assets
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-assets
+          path: dist/
+          if-no-files-found: error
+
+  install-smoke:
+    needs: build
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download release assets
+        uses: actions/download-artifact@v4
+        with:
+          name: release-assets
+          path: dist
+      - name: Install and execute release on Linux
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          fixture="$RUNNER_TEMP/releases/download/$GITHUB_REF_NAME"
+          install_dir="$RUNNER_TEMP/remote-bin"
+          mkdir -p "$fixture"
+          cp dist/* "$fixture/"
+
+          python3 -m http.server 8765 --bind 127.0.0.1 \
+            --directory "$RUNNER_TEMP/releases" >/tmp/remote-release-http.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid"' EXIT
+          for attempt in 1 2 3 4 5; do
+            curl -fsS "http://127.0.0.1:8765/download/$GITHUB_REF_NAME/checksums.txt" >/dev/null && break
+            if [ "$attempt" -eq 5 ]; then
+              cat /tmp/remote-release-http.log
+              exit 1
+            fi
+            sleep 1
+          done
+
+          REMOTE_VERSION="$GITHUB_REF_NAME" \
+          REMOTE_RELEASE_BASE_URL=http://127.0.0.1:8765 \
+          REMOTE_INSTALL_DIR="$install_dir" \
+            sh ./install.sh
+          test -x "$install_dir/remote"
+          test "$("$install_dir/remote" version)" = "$GITHUB_REF_NAME"
+      - name: Install and execute release on Windows
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $Fixture = Join-Path $env:RUNNER_TEMP "releases\download\$env:GITHUB_REF_NAME"
+          New-Item -ItemType Directory -Force -Path $Fixture | Out-Null
+          Copy-Item "dist\*" $Fixture
+
+          $ReleaseRoot = Join-Path $env:RUNNER_TEMP "releases"
+          $Log = Join-Path $env:RUNNER_TEMP "remote-release-http.log"
+          $Server = Start-Process python -ArgumentList @(
+            "-m", "http.server", "8765", "--bind", "127.0.0.1", "--directory", $ReleaseRoot
+          ) -RedirectStandardOutput $Log -RedirectStandardError "$Log.err" -PassThru
+          try {
+            $Ready = $false
+            foreach ($Attempt in 1..5) {
+              try {
+                Invoke-WebRequest -UseBasicParsing `
+                  "http://127.0.0.1:8765/download/$env:GITHUB_REF_NAME/checksums.txt" | Out-Null
+                $Ready = $true
+                break
+              } catch {
+                Start-Sleep -Seconds 1
+              }
+            }
+            if (-not $Ready) { throw "release fixture server did not start" }
+
+            $env:REMOTE_VERSION = $env:GITHUB_REF_NAME
+            $env:REMOTE_RELEASE_BASE_URL = "http://127.0.0.1:8765"
+            $env:REMOTE_INSTALL_DIR = Join-Path $env:RUNNER_TEMP "remote-bin"
+            & ./install.ps1
+            $Installed = Join-Path $env:REMOTE_INSTALL_DIR "remote.exe"
+            if (-not (Test-Path $Installed)) { throw "installer did not create $Installed" }
+            $InstalledVersion = & $Installed version
+            if ($LASTEXITCODE -ne 0 -or $InstalledVersion -ne $env:GITHUB_REF_NAME) {
+              throw "installed CLI failed: expected $env:GITHUB_REF_NAME, got '$InstalledVersion'"
+            }
+          } finally {
+            Stop-Process -Id $Server.Id -Force -ErrorAction SilentlyContinue
+          }
+
+  publish:
+    needs: [build, install-smoke]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download tested release assets
+        uses: actions/download-artifact@v4
+        with:
+          name: release-assets
+          path: dist
       - name: Publish GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
